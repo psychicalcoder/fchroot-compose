@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+import yaml
+import os
+import sys
+import subprocess
+
+if len(sys.argv) < 2:
+    print("compose file is not specified")
+    exit(1)
+
+config_fn = sys.argv[1]
+print("config: {}".format(config_fn))
+
+with open(config_fn, 'r') as f:
+    config_dict = yaml.load(f, Loader=yaml.Loader)
+
+
+orgdir = os.curdir
+# chdir to the config file's dir, to read the relative path in config file
+config_dir = os.path.split(config_fn)[0]
+if len(config_dir) > 0:
+    os.chdir(os.path.split(config_fn)[0])
+
+new_root = config_dict['newroot']
+binds = config_dict['bind']
+
+print('newroot:', new_root)
+print('binds:')
+
+cmd_arg = ['fchroot']
+
+for bind in binds:
+    src = bind['src']
+    src = os.path.abspath(src)
+
+    dst = bind['dst']
+    dst = os.path.realpath(dst)
+    fdst = os.path.join(new_root, dst[1:])
+    if os.path.exists(fdst):
+        if not os.path.isdir(fdst):
+            print('Warning: {} is not a directory.'.format(fdst))
+    else:
+        os.mkdir(fdst)
+    
+    print('  {}:{}'.format(src, dst))
+    cmd_arg.append('--bind')
+    cmd_arg.append('{}:{}'.format(src, dst))
+
+cmd_arg.append(new_root)
+
+os.chdir(orgdir)
+
+if os.geteuid() != 0:
+    ans = input("fchroot requires root privilege, try to use sudo? [y/N] ")
+    if ans.lower() in ['y', 'yes']:
+        cmd_arg.insert(0, 'sudo')
+    else:
+        print('Trying to use fchroot without sudo...')
+
+print('command:', end='')
+is_bind = False
+for s in cmd_arg:
+    print('{}{}'.format(' ' if is_bind else '\n  ',s), end='')
+    if s == '--bind':
+        is_bind = True
+    else:
+        is_bind = False
+
+print('\n' + 20*'=' + '\n')
+env = os.environ.copy()
+proc = subprocess.Popen(cmd_arg, env=env)
+proc.wait()

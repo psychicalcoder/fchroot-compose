@@ -1,0 +1,8 @@
+newroot: /home/marvin/stage3-latest
+bind:
+  - src: /home/marvin/fchroot-bind/fun-overlay
+    dst: /fun-overlay
+  - src: /home/marvin/fchroot-bind/pkg
+    dst: /var/cache/portage/packages
+  - src: /home/marvin/fchroot-bind/portage
+    dst: /etc/portage
