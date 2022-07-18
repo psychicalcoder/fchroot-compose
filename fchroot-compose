@@ -31,11 +31,16 @@ cmd_arg = ['fchroot']
 
 for bind in binds:
     src = bind['src']
+    # handle home directory
+    if src.startswith('~'):
+        src = src.replace('~', os.getenv('HOME'), 1)
     src = os.path.abspath(src)
 
     dst = bind['dst']
     dst = os.path.realpath(dst)
     fdst = os.path.join(new_root, dst[1:])
+
+    # mkdir if dst doesn't exist
     if os.path.exists(fdst):
         if not os.path.isdir(fdst):
             print('Warning: {} is not a directory.'.format(fdst))
